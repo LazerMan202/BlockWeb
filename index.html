@@ -1,0 +1,483 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockWeb 0.1</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #87CEEB;
+        font-family: Arial, sans-serif;
+    }
+
+    #game {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    #crosshair {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        width: 16px;
+        height: 16px;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+        content: "";
+        position: absolute;
+        background: white;
+        box-shadow: 0 0 2px black;
+    }
+
+    #crosshair::before {
+        width: 2px;
+        height: 16px;
+        left: 7px;
+        top: 0;
+    }
+
+    #crosshair::after {
+        width: 16px;
+        height: 2px;
+        left: 0;
+        top: 7px;
+    }
+
+    #menu {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.75);
+        color: white;
+        padding: 30px;
+        text-align: center;
+        border-radius: 10px;
+        z-index: 20;
+        width: min(90%, 400px);
+    }
+
+    #menu h1 {
+        margin-top: 0;
+        font-size: 32px;
+    }
+
+    #menu button {
+        border: none;
+        background: #4caf50;
+        color: white;
+        padding: 12px 28px;
+        font-size: 18px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    #menu button:hover {
+        background: #43a047;
+    }
+
+    #info {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0,0,0,0.45);
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 14px;
+        pointer-events: none;
+        z-index: 10;
+    }
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="crosshair"></div>
+
+<div id="info">
+    WASD = Move<br>
+    Mouse = Look<br>
+    ESC = Release mouse
+</div>
+
+<div id="menu">
+    <h1>BlockWeb</h1>
+    <p>Browser Voxel Engine — 0.1</p>
+    <p>Click Play, then use WASD and your mouse.</p>
+    <button id="play">PLAY</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* =========================================================
+   BLOCKWEB 0.1
+   ========================================================= */
+
+const canvas = document.getElementById("game");
+const menu = document.getElementById("menu");
+const playButton = document.getElementById("play");
+
+/* ---------- THREE.JS ---------- */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x87CEEB);
+
+scene.fog = new THREE.Fog(
+    0x87CEEB,
+    25,
+    100
+);
+
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    200
+);
+
+camera.position.set(0, 4, 8);
+
+const renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true
+});
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio, 2)
+);
+
+/* ---------- LIGHTING ---------- */
+
+const ambientLight = new THREE.HemisphereLight(
+    0xffffff,
+    0x668855,
+    1.8
+);
+
+scene.add(ambientLight);
+
+const sun = new THREE.DirectionalLight(
+    0xffffff,
+    2
+);
+
+sun.position.set(
+    30,
+    50,
+    20
+);
+
+scene.add(sun);
+
+/* ---------- BLOCK MATERIALS ---------- */
+
+const grassMaterial = new THREE.MeshLambertMaterial({
+    color: 0x55aa35
+});
+
+const dirtMaterial = new THREE.MeshLambertMaterial({
+    color: 0x8b5a2b
+});
+
+const stoneMaterial = new THREE.MeshLambertMaterial({
+    color: 0x888888
+});
+
+/* ---------- BLOCK GEOMETRY ---------- */
+
+const blockGeometry = new THREE.BoxGeometry(
+    1,
+    1,
+    1
+);
+
+/* ---------- WORLD ---------- */
+
+const world = [];
+
+function addBlock(x, y, z, material) {
+
+    const block = new THREE.Mesh(
+        blockGeometry,
+        material
+    );
+
+    block.position.set(
+        x,
+        y,
+        z
+    );
+
+    scene.add(block);
+
+    world.push(block);
+
+    return block;
+}
+
+/* ---------- GENERATE SIMPLE TERRAIN ---------- */
+
+for (let x = -20; x <= 20; x++) {
+
+    for (let z = -20; z <= 20; z++) {
+
+        // Simple hills
+        const height =
+            Math.floor(
+                2 +
+                Math.sin(x * 0.35) * 1.2 +
+                Math.cos(z * 0.3) * 1.2
+            );
+
+        for (let y = 0; y <= height; y++) {
+
+            let material;
+
+            if (y === height) {
+                material = grassMaterial;
+            }
+            else if (y >= height - 2) {
+                material = dirtMaterial;
+            }
+            else {
+                material = stoneMaterial;
+            }
+
+            addBlock(
+                x,
+                y,
+                z,
+                material
+            );
+        }
+    }
+}
+
+/* ---------- PLAYER ---------- */
+
+const player = {
+    position: new THREE.Vector3(0, 6, 8),
+
+    velocity: new THREE.Vector3(),
+
+    speed: 6,
+
+    height: 1.7
+};
+
+camera.position.copy(player.position);
+
+/* ---------- CONTROLS ---------- */
+
+const keys = {};
+
+document.addEventListener(
+    "keydown",
+    event => {
+        keys[event.code] = true;
+    }
+);
+
+document.addEventListener(
+    "keyup",
+    event => {
+        keys[event.code] = false;
+    }
+);
+
+/* ---------- MOUSE LOOK ---------- */
+
+let yaw = 0;
+let pitch = 0;
+
+document.addEventListener(
+    "mousemove",
+    event => {
+
+        if (
+            document.pointerLockElement !== canvas
+        ) {
+            return;
+        }
+
+        yaw -= event.movementX * 0.002;
+
+        pitch -= event.movementY * 0.002;
+
+        const limit = Math.PI / 2 - 0.05;
+
+        pitch = Math.max(
+            -limit,
+            Math.min(limit, pitch)
+        );
+    }
+);
+
+/* ---------- POINTER LOCK ---------- */
+
+playButton.addEventListener(
+    "click",
+    () => {
+
+        menu.style.display = "none";
+
+        canvas.requestPointerLock();
+    }
+);
+
+document.addEventListener(
+    "pointerlockchange",
+    () => {
+
+        if (
+            document.pointerLockElement !== canvas
+        ) {
+            menu.style.display = "block";
+        }
+    }
+);
+
+/* ---------- MOVEMENT ---------- */
+
+const clock = new THREE.Clock();
+
+function updatePlayer(delta) {
+
+    const direction = new THREE.Vector3();
+
+    if (keys["KeyW"]) {
+        direction.z -= 1;
+    }
+
+    if (keys["KeyS"]) {
+        direction.z += 1;
+    }
+
+    if (keys["KeyA"]) {
+        direction.x -= 1;
+    }
+
+    if (keys["KeyD"]) {
+        direction.x += 1;
+    }
+
+    if (direction.length() > 0) {
+        direction.normalize();
+    }
+
+    // Move relative to camera direction
+    const forward = new THREE.Vector3(
+        -Math.sin(yaw),
+        0,
+        -Math.cos(yaw)
+    );
+
+    const right = new THREE.Vector3(
+        Math.cos(yaw),
+        0,
+        -Math.sin(yaw)
+    );
+
+    const movement = new THREE.Vector3();
+
+    movement.addScaledVector(
+        forward,
+        direction.z
+    );
+
+    movement.addScaledVector(
+        right,
+        direction.x
+    );
+
+    if (movement.length() > 0) {
+        movement.normalize();
+    }
+
+    player.position.addScaledVector(
+        movement,
+        player.speed * delta
+    );
+
+    camera.position.copy(
+        player.position
+    );
+
+    camera.rotation.order = "YXZ";
+
+    camera.rotation.y = yaw;
+
+    camera.rotation.x = pitch;
+}
+
+/* ---------- RESIZE ---------- */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+    }
+);
+
+/* ---------- GAME LOOP ---------- */
+
+function gameLoop() {
+
+    requestAnimationFrame(gameLoop);
+
+    const delta = Math.min(
+        clock.getDelta(),
+        0.05
+    );
+
+    updatePlayer(delta);
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
+```
