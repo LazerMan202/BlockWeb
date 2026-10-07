@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BlockWeb 0.2</title>
+<title>BlockWeb 0.3</title>
 
 <style>
 * {
@@ -26,7 +26,8 @@ html, body {
     display: block;
 }
 
-/* Crosshair */
+/* CROSSHAIR */
+
 #crosshair {
     position: fixed;
     left: 50%;
@@ -60,13 +61,14 @@ html, body {
     top: 7px;
 }
 
-/* Menu */
+/* MENU */
+
 #menu {
     position: fixed;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.78);
+    background: rgba(0,0,0,0.78);
     color: white;
     padding: 30px;
     text-align: center;
@@ -94,21 +96,24 @@ html, body {
     background: #43a047;
 }
 
-/* Information */
+/* INFO */
+
 #info {
     position: fixed;
     top: 10px;
     left: 10px;
     color: white;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0,0,0,0.45);
     padding: 8px 12px;
     border-radius: 5px;
     font-size: 14px;
     pointer-events: none;
     z-index: 10;
+    line-height: 1.4;
 }
 
-/* Hotbar */
+/* HOTBAR */
+
 #hotbar {
     position: fixed;
     bottom: 20px;
@@ -117,7 +122,7 @@ html, body {
     display: flex;
     gap: 4px;
     padding: 5px;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0,0,0,0.45);
     border-radius: 6px;
     z-index: 10;
 }
@@ -126,7 +131,7 @@ html, body {
     width: 54px;
     height: 54px;
     border: 3px solid #777;
-    background: rgba(40, 40, 40, 0.8);
+    background: rgba(40,40,40,0.8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -149,7 +154,7 @@ html, body {
 .block-icon {
     width: 30px;
     height: 30px;
-    border: 2px solid rgba(0, 0, 0, 0.25);
+    border: 2px solid rgba(0,0,0,0.25);
 }
 
 .grass-icon {
@@ -163,13 +168,6 @@ html, body {
 .stone-icon {
     background: #888888;
 }
-
-/* Block selection outline */
-#selection {
-    position: absolute;
-    pointer-events: none;
-    z-index: 5;
-}
 </style>
 </head>
 
@@ -181,6 +179,7 @@ html, body {
 
 <div id="info">
     WASD = Move<br>
+    SPACE = Jump<br>
     Mouse = Look<br>
     Left Click = Break<br>
     Right Click = Place<br>
@@ -190,6 +189,7 @@ html, body {
 </div>
 
 <div id="hotbar">
+
     <div class="slot selected" data-slot="0">
         <span class="slot-number">1</span>
         <div class="block-icon grass-icon"></div>
@@ -204,48 +204,74 @@ html, body {
         <span class="slot-number">3</span>
         <div class="block-icon stone-icon"></div>
     </div>
+
 </div>
 
 <div id="menu">
+
     <h1>BlockWeb</h1>
-    <p>Browser Voxel Engine — 0.2</p>
-    <p>Break and place blocks!</p>
+
+    <p>Browser Voxel Engine — 0.3</p>
+
+    <p>
+        Gravity and collision are now enabled.
+    </p>
+
+    <p>
+        Click PLAY to enter the world.
+    </p>
+
     <button id="play">PLAY</button>
+
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
 /* =========================================================
-   BLOCKWEB 0.2
+   BLOCKWEB 0.3
    ========================================================= */
 
-/* ---------- THREE.JS ---------- */
 
-const canvas = document.getElementById("game");
+/* =========================================================
+   THREE.JS
+   ========================================================= */
 
-const scene = new THREE.Scene();
+const canvas =
+    document.getElementById("game");
 
-scene.background = new THREE.Color(0x87CEEB);
+const scene =
+    new THREE.Scene();
 
-scene.fog = new THREE.Fog(
-    0x87CEEB,
-    25,
-    100
-);
+scene.background =
+    new THREE.Color(0x87CEEB);
 
-const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    200
-);
+scene.fog =
+    new THREE.Fog(
+        0x87CEEB,
+        25,
+        100
+    );
 
-const renderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    antialias: true
-});
+
+const camera =
+    new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth /
+        window.innerHeight,
+        0.1,
+        200
+    );
+
+
+const renderer =
+    new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true
+    });
+
 
 renderer.setSize(
     window.innerWidth,
@@ -253,84 +279,123 @@ renderer.setSize(
 );
 
 renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio, 2)
+    Math.min(
+        window.devicePixelRatio,
+        2
+    )
 );
 
 
-/* ---------- LIGHTING ---------- */
+/* =========================================================
+   LIGHTING
+   ========================================================= */
 
-const ambientLight = new THREE.HemisphereLight(
-    0xffffff,
-    0x668855,
-    1.8
-);
+const ambientLight =
+    new THREE.HemisphereLight(
+        0xffffff,
+        0x668855,
+        1.8
+    );
 
-scene.add(ambientLight);
-
-const sun = new THREE.DirectionalLight(
-    0xffffff,
-    2
-);
-
-sun.position.set(30, 50, 20);
-
-scene.add(sun);
-
-
-/* ---------- MATERIALS ---------- */
-
-const grassMaterial = new THREE.MeshLambertMaterial({
-    color: 0x55aa35
-});
-
-const dirtMaterial = new THREE.MeshLambertMaterial({
-    color: 0x8b5a2b
-});
-
-const stoneMaterial = new THREE.MeshLambertMaterial({
-    color: 0x888888
-});
-
-const blockGeometry = new THREE.BoxGeometry(
-    1,
-    1,
-    1
+scene.add(
+    ambientLight
 );
 
 
-/* ---------- BLOCK TYPES ---------- */
+const sun =
+    new THREE.DirectionalLight(
+        0xffffff,
+        2
+    );
+
+sun.position.set(
+    30,
+    50,
+    20
+);
+
+scene.add(
+    sun
+);
+
+
+/* =========================================================
+   BLOCK MATERIALS
+   ========================================================= */
+
+const grassMaterial =
+    new THREE.MeshLambertMaterial({
+        color: 0x55aa35
+    });
+
+
+const dirtMaterial =
+    new THREE.MeshLambertMaterial({
+        color: 0x8b5a2b
+    });
+
+
+const stoneMaterial =
+    new THREE.MeshLambertMaterial({
+        color: 0x888888
+    });
+
+
+const blockGeometry =
+    new THREE.BoxGeometry(
+        1,
+        1,
+        1
+    );
+
+
+/* =========================================================
+   BLOCK TYPES
+   ========================================================= */
 
 const blockTypes = [
+
     {
         name: "Grass",
         material: grassMaterial
     },
+
     {
         name: "Dirt",
         material: dirtMaterial
     },
+
     {
         name: "Stone",
         material: stoneMaterial
     }
+
 ];
+
 
 let selectedBlock = 0;
 
 
-/* ---------- WORLD ---------- */
+/* =========================================================
+   WORLD
+   ========================================================= */
 
 const world = [];
 
 
-/* Add a block */
+function addBlock(
+    x,
+    y,
+    z,
+    material,
+    type = 0
+) {
 
-function addBlock(x, y, z, material, type = 0) {
-
-    const block = new THREE.Mesh(
-        blockGeometry,
-        material
-    );
+    const block =
+        new THREE.Mesh(
+            blockGeometry,
+            material
+        );
 
     block.position.set(
         x,
@@ -338,63 +403,108 @@ function addBlock(x, y, z, material, type = 0) {
         z
     );
 
-    block.userData.type = type;
+    block.userData.type =
+        type;
 
-    scene.add(block);
+    scene.add(
+        block
+    );
 
-    world.push(block);
+    world.push(
+        block
+    );
 
     return block;
 }
 
 
-/* Remove a block */
-
 function removeBlock(block) {
 
-    scene.remove(block);
+    scene.remove(
+        block
+    );
 
-    const index = world.indexOf(block);
+    const index =
+        world.indexOf(
+            block
+        );
 
     if (index !== -1) {
-        world.splice(index, 1);
+
+        world.splice(
+            index,
+            1
+        );
     }
 }
 
 
-/* ---------- GENERATE TERRAIN ---------- */
+/* =========================================================
+   TERRAIN GENERATION
+   ========================================================= */
 
-for (let x = -20; x <= 20; x++) {
+for (
+    let x = -20;
+    x <= 20;
+    x++
+) {
 
-    for (let z = -20; z <= 20; z++) {
+    for (
+        let z = -20;
+        z <= 20;
+        z++
+    ) {
 
         const height =
             Math.floor(
                 2 +
-                Math.sin(x * 0.35) * 1.2 +
-                Math.cos(z * 0.3) * 1.2
+                Math.sin(
+                    x * 0.35
+                ) * 1.2 +
+                Math.cos(
+                    z * 0.3
+                ) * 1.2
             );
 
-        for (let y = 0; y <= height; y++) {
+
+        for (
+            let y = 0;
+            y <= height;
+            y++
+        ) {
 
             let material;
             let type;
 
-            if (y === height) {
 
-                material = grassMaterial;
+            if (
+                y === height
+            ) {
+
+                material =
+                    grassMaterial;
+
                 type = 0;
 
-            } else if (y >= height - 2) {
+            }
+            else if (
+                y >= height - 2
+            ) {
 
-                material = dirtMaterial;
+                material =
+                    dirtMaterial;
+
                 type = 1;
 
-            } else {
+            }
+            else {
 
-                material = stoneMaterial;
+                material =
+                    stoneMaterial;
+
                 type = 2;
             }
+
 
             addBlock(
                 x,
@@ -408,29 +518,52 @@ for (let x = -20; x <= 20; x++) {
 }
 
 
-/* ---------- PLAYER ---------- */
+/* =========================================================
+   PLAYER
+   ========================================================= */
 
 const player = {
 
-    position: new THREE.Vector3(
-        0,
-        6,
-        8
-    ),
+    position:
+        new THREE.Vector3(
+            0,
+            8,
+            8
+        ),
 
-    speed: 6,
+    velocity:
+        new THREE.Vector3(),
 
-    height: 1.7
+    width: 0.7,
+
+    height: 1.8,
+
+    eyeHeight: 1.62,
+
+    speed: 5.5,
+
+    jumpPower: 8,
+
+    gravity: 22,
+
+    onGround: false
 };
 
-camera.position.copy(
-    player.position
+
+camera.position.set(
+    player.position.x,
+    player.position.y +
+        player.eyeHeight,
+    player.position.z
 );
 
 
-/* ---------- KEYBOARD ---------- */
+/* =========================================================
+   INPUT
+   ========================================================= */
 
 const keys = {};
+
 
 document.addEventListener(
     "keydown",
@@ -438,374 +571,226 @@ document.addEventListener(
 
         keys[event.code] = true;
 
-        /* Number keys */
 
-        if (event.code === "Digit1") {
+        if (
+            event.code === "Space"
+        ) {
+
+            if (
+                player.onGround
+            ) {
+
+                player.velocity.y =
+                    player.jumpPower;
+
+                player.onGround =
+                    false;
+            }
+        }
+
+
+        if (
+            event.code === "Digit1"
+        ) {
             selectBlock(0);
         }
 
-        if (event.code === "Digit2") {
+
+        if (
+            event.code === "Digit2"
+        ) {
             selectBlock(1);
         }
 
-        if (event.code === "Digit3") {
+
+        if (
+            event.code === "Digit3"
+        ) {
             selectBlock(2);
         }
     }
 );
 
+
 document.addEventListener(
     "keyup",
     event => {
 
-        keys[event.code] = false;
+        keys[event.code] =
+            false;
     }
 );
 
 
-/* ---------- MOUSE LOOK ---------- */
+/* =========================================================
+   MOUSE LOOK
+   ========================================================= */
 
 let yaw = 0;
 let pitch = 0;
+
 
 document.addEventListener(
     "mousemove",
     event => {
 
         if (
-            document.pointerLockElement !== canvas
+            document.pointerLockElement
+            !== canvas
         ) {
             return;
         }
 
-        yaw -= event.movementX * 0.002;
 
-        pitch -= event.movementY * 0.002;
+        yaw -=
+            event.movementX *
+            0.002;
+
+
+        pitch -=
+            event.movementY *
+            0.002;
+
 
         const limit =
-            Math.PI / 2 - 0.05;
+            Math.PI / 2 -
+            0.05;
 
-        pitch = Math.max(
-            -limit,
-            Math.min(limit, pitch)
-        );
+
+        pitch =
+            Math.max(
+                -limit,
+                Math.min(
+                    limit,
+                    pitch
+                )
+            );
     }
 );
 
 
-/* ---------- POINTER LOCK ---------- */
+/* =========================================================
+   POINTER LOCK
+   ========================================================= */
 
 const menu =
-    document.getElementById("menu");
+    document.getElementById(
+        "menu"
+    );
+
 
 const playButton =
-    document.getElementById("play");
+    document.getElementById(
+        "play"
+    );
+
 
 playButton.addEventListener(
     "click",
     () => {
 
-        menu.style.display = "none";
+        menu.style.display =
+            "none";
 
         canvas.requestPointerLock();
     }
 );
+
 
 document.addEventListener(
     "pointerlockchange",
     () => {
 
         if (
-            document.pointerLockElement !== canvas
+            document.pointerLockElement
+            !== canvas
         ) {
-            menu.style.display = "block";
+
+            menu.style.display =
+                "block";
         }
     }
 );
 
 
-/* ---------- BLOCK RAYCASTING ---------- */
-
-const raycaster = new THREE.Raycaster();
-
-raycaster.far = 8;
+/* =========================================================
+   COLLISION HELPERS
+   ========================================================= */
 
 
-/* Find block under crosshair */
+/*
+    Returns true if the player's
+    bounding box overlaps a block.
+*/
 
-function getTargetBlock() {
+function playerCollides(
+    position
+) {
 
-    raycaster.setFromCamera(
-        new THREE.Vector2(0, 0),
-        camera
-    );
-
-    const hits =
-        raycaster.intersectObjects(
-            world,
-            false
-        );
-
-    if (hits.length === 0) {
-        return null;
-    }
-
-    return hits[0];
-}
+    const halfWidth =
+        player.width / 2;
 
 
-/* ---------- BLOCK OUTLINE ---------- */
-
-const outlineGeometry =
-    new THREE.EdgesGeometry(
-        blockGeometry
-    );
-
-const outlineMaterial =
-    new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.9
-    });
-
-const outline =
-    new THREE.LineSegments(
-        outlineGeometry,
-        outlineMaterial
-    );
-
-outline.visible = false;
-
-scene.add(outline);
-
-
-/* Update block outline */
-
-function updateOutline() {
-
-    const hit =
-        getTargetBlock();
-
-    if (!hit) {
-
-        outline.visible = false;
-
-        return;
-    }
-
-    outline.position.copy(
-        hit.object.position
-    );
-
-    outline.scale.set(
-        1.01,
-        1.01,
-        1.01
-    );
-
-    outline.visible = true;
-}
-
-
-/* ---------- BREAK BLOCK ---------- */
-
-canvas.addEventListener(
-    "mousedown",
-    event => {
-
-        if (
-            document.pointerLockElement !== canvas
-        ) {
-            return;
-        }
-
-        /* Left click */
-
-        if (event.button === 0) {
-
-            const hit =
-                getTargetBlock();
-
-            if (!hit) {
-                return;
-            }
-
-            /* Don't remove the entire world */
-
-            if (world.length <= 1) {
-                return;
-            }
-
-            removeBlock(
-                hit.object
-            );
-        }
-
-        /* Right click */
-
-        if (event.button === 2) {
-
-            const hit =
-                getTargetBlock();
-
-            if (!hit) {
-                return;
-            }
-
-            const block =
-                hit.object;
-
-            const normal =
-                hit.face.normal.clone();
-
-            const position =
-                block.position.clone();
-
-            position.add(
-                normal
-            );
-
-            /* Don't place a block inside player */
-
-            const playerBox =
-                new THREE.Box3().setFromCenterAndSize(
-                    player.position,
-                    new THREE.Vector3(
-                        0.8,
-                        1.8,
-                        0.8
-                    )
-                );
-
-            const newBlockBox =
-                new THREE.Box3().setFromCenterAndSize(
-                    position,
-                    new THREE.Vector3(
-                        1,
-                        1,
-                        1
-                    )
-                );
-
-            if (
-                playerBox.intersectsBox(
-                    newBlockBox
-                )
-            ) {
-                return;
-            }
-
-            /* Prevent duplicate blocks */
-
-            for (const existing of world) {
-
-                if (
-                    existing.position.equals(
-                        position
-                    )
-                ) {
-                    return;
-                }
-            }
-
-            addBlock(
-                position.x,
+    const playerBox =
+        new THREE.Box3(
+            new THREE.Vector3(
+                position.x -
+                    halfWidth,
                 position.y,
-                position.z,
-                blockTypes[selectedBlock].material,
-                selectedBlock
-            );
-        }
-    }
-);
+                position.z -
+                    halfWidth
+            ),
+
+            new THREE.Vector3(
+                position.x +
+                    halfWidth,
+                position.y +
+                    player.height,
+                position.z +
+                    halfWidth
+            )
+        );
 
 
-/* Stop right-click menu */
-
-canvas.addEventListener(
-    "contextmenu",
-    event => {
-        event.preventDefault();
-    }
-);
-
-
-/* ---------- HOTBAR ---------- */
-
-const slots =
-    document.querySelectorAll(".slot");
-
-
-function selectBlock(index) {
-
-    if (
-        index < 0 ||
-        index >= blockTypes.length
+    for (
+        const block of world
     ) {
-        return;
+
+        const blockBox =
+            new THREE.Box3().setFromCenterAndSize(
+                block.position,
+                new THREE.Vector3(
+                    1,
+                    1,
+                    1
+                )
+            );
+
+
+        if (
+            playerBox.intersectsBox(
+                blockBox
+            )
+        ) {
+
+            return true;
+        }
     }
 
-    selectedBlock = index;
 
-    slots.forEach(
-        (slot, i) => {
-
-            slot.classList.toggle(
-                "selected",
-                i === selectedBlock
-            );
-        }
-    );
+    return false;
 }
 
 
-/* ---------- SCROLL WHEEL ---------- */
-
-canvas.addEventListener(
-    "wheel",
-    event => {
-
-        if (
-            document.pointerLockElement !== canvas
-        ) {
-            return;
-        }
-
-        if (event.deltaY > 0) {
-
-            selectedBlock++;
-
-            if (
-                selectedBlock >= blockTypes.length
-            ) {
-                selectedBlock = 0;
-            }
-
-        } else {
-
-            selectedBlock--;
-
-            if (selectedBlock < 0) {
-                selectedBlock =
-                    blockTypes.length - 1;
-            }
-        }
-
-        selectBlock(
-            selectedBlock
-        );
-    }
-);
-
-
-/* ---------- MOVEMENT ---------- */
-
-const clock = new THREE.Clock();
+/* =========================================================
+   MOVEMENT + COLLISION
+   ========================================================= */
 
 function updatePlayer(delta) {
 
     const input =
         new THREE.Vector3();
+
 
     /*
        W = forward
@@ -814,23 +799,38 @@ function updatePlayer(delta) {
        D = right
     */
 
-    if (keys["KeyW"]) {
+    if (
+        keys["KeyW"]
+    ) {
         input.z -= 1;
     }
 
-    if (keys["KeyS"]) {
+
+    if (
+        keys["KeyS"]
+    ) {
         input.z += 1;
     }
 
-    if (keys["KeyA"]) {
+
+    if (
+        keys["KeyA"]
+    ) {
         input.x -= 1;
     }
 
-    if (keys["KeyD"]) {
+
+    if (
+        keys["KeyD"]
+    ) {
         input.x += 1;
     }
 
-    if (input.length() > 0) {
+
+    if (
+        input.length() > 0
+    ) {
+
         input.normalize();
     }
 
@@ -844,6 +844,7 @@ function updatePlayer(delta) {
             -Math.cos(yaw)
         );
 
+
     const right =
         new THREE.Vector3(
             Math.cos(yaw),
@@ -851,19 +852,16 @@ function updatePlayer(delta) {
             -Math.sin(yaw)
         );
 
+
     const movement =
         new THREE.Vector3();
 
-
-    /*
-       The negative sign here fixes
-       the W/S direction from 0.1.
-    */
 
     movement.addScaledVector(
         forward,
         -input.z
     );
+
 
     movement.addScaledVector(
         right,
@@ -871,30 +869,544 @@ function updatePlayer(delta) {
     );
 
 
-    if (movement.length() > 0) {
+    if (
+        movement.length() > 0
+    ) {
+
         movement.normalize();
     }
 
 
-    player.position.addScaledVector(
-        movement,
-        player.speed * delta
+    /* Horizontal movement */
+
+    const newX =
+        player.position.clone();
+
+    newX.x +=
+        movement.x *
+        player.speed *
+        delta;
+
+
+    if (
+        !playerCollides(
+            newX
+        )
+    ) {
+
+        player.position.x =
+            newX.x;
+    }
+
+
+    const newZ =
+        player.position.clone();
+
+    newZ.z +=
+        movement.z *
+        player.speed *
+        delta;
+
+
+    if (
+        !playerCollides(
+            newZ
+        )
+    ) {
+
+        player.position.z =
+            newZ.z;
+    }
+
+
+    /* Gravity */
+
+    player.velocity.y -=
+        player.gravity *
+        delta;
+
+
+    /* Vertical movement */
+
+    const newY =
+        player.position.clone();
+
+    newY.y +=
+        player.velocity.y *
+        delta;
+
+
+    if (
+        !playerCollides(
+            newY
+        )
+    ) {
+
+        player.position.y =
+            newY.y;
+
+        player.onGround =
+            false;
+
+    }
+    else {
+
+        /*
+            We collided vertically.
+            Find whether we're falling
+            or jumping.
+        */
+
+        if (
+            player.velocity.y < 0
+        ) {
+
+            /*
+                Falling onto a block.
+            */
+
+            player.onGround =
+                true;
+
+            player.velocity.y =
+                0;
+
+            /*
+                Move upward slightly
+                until we're no longer
+                intersecting.
+            */
+
+            while (
+                playerCollides(
+                    player.position
+                )
+            ) {
+
+                player.position.y +=
+                    0.01;
+            }
+
+        }
+        else {
+
+            /*
+                Hit ceiling.
+            */
+
+            player.velocity.y =
+                0;
+
+            while (
+                playerCollides(
+                    player.position
+                )
+            ) {
+
+                player.position.y -=
+                    0.01;
+            }
+        }
+    }
+
+
+    /* Respawn if we fall */
+
+    if (
+        player.position.y < -20
+    ) {
+
+        player.position.set(
+            0,
+            10,
+            8
+        );
+
+        player.velocity.set(
+            0,
+            0,
+            0
+        );
+    }
+
+
+    /* Camera */
+
+    camera.position.set(
+        player.position.x,
+        player.position.y +
+            player.eyeHeight,
+        player.position.z
     );
 
 
-    camera.position.copy(
-        player.position
-    );
+    camera.rotation.order =
+        "YXZ";
 
-    camera.rotation.order = "YXZ";
+    camera.rotation.y =
+        yaw;
 
-    camera.rotation.y = yaw;
-
-    camera.rotation.x = pitch;
+    camera.rotation.x =
+        pitch;
 }
 
 
-/* ---------- RESIZE ---------- */
+/* =========================================================
+   RAYCASTING
+   ========================================================= */
+
+const raycaster =
+    new THREE.Raycaster();
+
+
+raycaster.far = 8;
+
+
+function getTargetBlock() {
+
+    raycaster.setFromCamera(
+        new THREE.Vector2(
+            0,
+            0
+        ),
+        camera
+    );
+
+
+    const hits =
+        raycaster.intersectObjects(
+            world,
+            false
+        );
+
+
+    if (
+        hits.length === 0
+    ) {
+
+        return null;
+    }
+
+
+    return hits[0];
+}
+
+
+/* =========================================================
+   BLOCK OUTLINE
+   ========================================================= */
+
+const outlineGeometry =
+    new THREE.EdgesGeometry(
+        blockGeometry
+    );
+
+
+const outlineMaterial =
+    new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.9
+    });
+
+
+const outline =
+    new THREE.LineSegments(
+        outlineGeometry,
+        outlineMaterial
+    );
+
+
+outline.visible =
+    false;
+
+
+scene.add(
+    outline
+);
+
+
+function updateOutline() {
+
+    const hit =
+        getTargetBlock();
+
+
+    if (!hit) {
+
+        outline.visible =
+            false;
+
+        return;
+    }
+
+
+    outline.position.copy(
+        hit.object.position
+    );
+
+
+    outline.scale.set(
+        1.01,
+        1.01,
+        1.01
+    );
+
+
+    outline.visible =
+        true;
+}
+
+
+/* =========================================================
+   BREAK + PLACE
+   ========================================================= */
+
+canvas.addEventListener(
+    "mousedown",
+    event => {
+
+        if (
+            document.pointerLockElement
+            !== canvas
+        ) {
+            return;
+        }
+
+
+        /* LEFT CLICK */
+
+        if (
+            event.button === 0
+        ) {
+
+            const hit =
+                getTargetBlock();
+
+
+            if (!hit) {
+                return;
+            }
+
+
+            if (
+                world.length <= 1
+            ) {
+                return;
+            }
+
+
+            removeBlock(
+                hit.object
+            );
+        }
+
+
+        /* RIGHT CLICK */
+
+        if (
+            event.button === 2
+        ) {
+
+            const hit =
+                getTargetBlock();
+
+
+            if (!hit) {
+                return;
+            }
+
+
+            const block =
+                hit.object;
+
+
+            const normal =
+                hit.face.normal.clone();
+
+
+            const position =
+                block.position.clone();
+
+
+            position.add(
+                normal
+            );
+
+
+            /* Don't put block in player */
+
+            const playerBox =
+                new THREE.Box3().setFromCenterAndSize(
+                    new THREE.Vector3(
+                        player.position.x,
+                        player.position.y +
+                            player.height / 2,
+                        player.position.z
+                    ),
+
+                    new THREE.Vector3(
+                        player.width,
+                        player.height,
+                        player.width
+                    )
+                );
+
+
+            const newBlockBox =
+                new THREE.Box3().setFromCenterAndSize(
+                    position,
+                    new THREE.Vector3(
+                        1,
+                        1,
+                        1
+                    )
+                );
+
+
+            if (
+                playerBox.intersectsBox(
+                    newBlockBox
+                )
+            ) {
+
+                return;
+            }
+
+
+            /* Prevent duplicates */
+
+            for (
+                const existing of world
+            ) {
+
+                if (
+                    existing.position.equals(
+                        position
+                    )
+                ) {
+
+                    return;
+                }
+            }
+
+
+            addBlock(
+                position.x,
+                position.y,
+                position.z,
+                blockTypes[
+                    selectedBlock
+                ].material,
+                selectedBlock
+            );
+        }
+    }
+);
+
+
+/* Disable browser right-click menu */
+
+canvas.addEventListener(
+    "contextmenu",
+    event => {
+
+        event.preventDefault();
+    }
+);
+
+
+/* =========================================================
+   HOTBAR
+   ========================================================= */
+
+const slots =
+    document.querySelectorAll(
+        ".slot"
+    );
+
+
+function selectBlock(index) {
+
+    if (
+        index < 0 ||
+        index >= blockTypes.length
+    ) {
+        return;
+    }
+
+
+    selectedBlock =
+        index;
+
+
+    slots.forEach(
+        (slot, i) => {
+
+            slot.classList.toggle(
+                "selected",
+                i === selectedBlock
+            );
+        }
+    );
+}
+
+
+/* =========================================================
+   SCROLL
+   ========================================================= */
+
+canvas.addEventListener(
+    "wheel",
+    event => {
+
+        if (
+            document.pointerLockElement
+            !== canvas
+        ) {
+            return;
+        }
+
+
+        if (
+            event.deltaY > 0
+        ) {
+
+            selectedBlock++;
+
+            if (
+                selectedBlock >=
+                blockTypes.length
+            ) {
+
+                selectedBlock = 0;
+            }
+
+        }
+        else {
+
+            selectedBlock--;
+
+            if (
+                selectedBlock < 0
+            ) {
+
+                selectedBlock =
+                    blockTypes.length - 1;
+            }
+        }
+
+
+        selectBlock(
+            selectedBlock
+        );
+    }
+);
+
+
+/* =========================================================
+   RESIZE
+   ========================================================= */
 
 window.addEventListener(
     "resize",
@@ -904,7 +1416,9 @@ window.addEventListener(
             window.innerWidth /
             window.innerHeight;
 
+
         camera.updateProjectionMatrix();
+
 
         renderer.setSize(
             window.innerWidth,
@@ -914,7 +1428,13 @@ window.addEventListener(
 );
 
 
-/* ---------- GAME LOOP ---------- */
+/* =========================================================
+   GAME LOOP
+   ========================================================= */
+
+const clock =
+    new THREE.Clock();
+
 
 function gameLoop() {
 
@@ -922,21 +1442,28 @@ function gameLoop() {
         gameLoop
     );
 
+
     const delta =
         Math.min(
             clock.getDelta(),
             0.05
         );
 
-    updatePlayer(delta);
+
+    updatePlayer(
+        delta
+    );
+
 
     updateOutline();
+
 
     renderer.render(
         scene,
         camera
     );
 }
+
 
 gameLoop();
 
