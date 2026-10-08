@@ -247,14 +247,7 @@ input{
    ------------------------- */
 
 const CHUNK_SIZE = 16;
-
-/*
-   0.5.3 PERFORMANCE CHANGE:
-   3 chunks = 7x7 = 49 chunks
-   2 chunks = 5x5 = 25 chunks
-*/
 const LOAD_DISTANCE = 2;
-
 const WORLD_BOTTOM = -8;
 
 
@@ -653,15 +646,6 @@ const faceList = [
 
 function rebuildChunkMesh(chunk){
 
-    /*
-       0.5.3 PERFORMANCE CHANGE:
-       This function is ONLY called when a chunk actually
-       needs rebuilding.
-
-       We no longer rebuild every loaded chunk every
-       0.25 seconds.
-    */
-
     if(chunk.mesh){
 
         scene.remove(chunk.mesh);
@@ -853,11 +837,6 @@ function updateChunks(){
         currentCX !== lastChunkX ||
         currentCZ !== lastChunkZ;
 
-    /*
-       Only do chunk loading work when the player
-       actually enters a different chunk.
-    */
-
     if(
         !movedChunk &&
         chunks.size > 0
@@ -897,12 +876,6 @@ function updateChunks(){
         }
     }
 
-    /*
-       Build newly generated chunks once.
-       Then rebuild their neighbors so faces at
-       chunk borders are correct.
-    */
-
     const rebuildSet = new Set();
 
     for(const chunk of newlyGenerated){
@@ -929,10 +902,6 @@ function updateChunks(){
     for(const chunk of rebuildSet){
         rebuildChunkMesh(chunk);
     }
-
-    /*
-       Unload distant chunks.
-    */
 
     for(const [key,chunk] of chunks){
 
@@ -1488,6 +1457,23 @@ function selectBlock(index){
         });
 }
 
+
+/*
+   FIXED PLACEMENT SYSTEM
+
+   The original 0.5.3 movement, rendering,
+   raycasting, chunk system and breaking
+   code remain unchanged.
+
+   Placement now:
+   1. Finds the adjacent block from the
+      clicked face.
+   2. Checks whether that exact location
+      already contains a block.
+   3. Checks the REAL player's position.
+   4. Places the selected block.
+*/
+
 renderer.domElement.addEventListener(
     "mousedown",
     e => {
@@ -1497,6 +1483,13 @@ renderer.domElement.addEventListener(
         }
 
         if(!pointerLocked){
+            return;
+        }
+
+        if(
+            e.button !== 0 &&
+            e.button !== 2
+        ){
             return;
         }
 
@@ -1510,26 +1503,28 @@ renderer.domElement.addEventListener(
         const block =
             target.block;
 
+
+        /* -------------------------
+           BREAK
+           ------------------------- */
+
         if(e.button === 0){
 
             if(block.unbreakable){
                 return;
             }
 
-            blockMap.delete(
+            const key =
                 blockKey(
                     block.x,
                     block.y,
                     block.z
-                )
-            );
+                );
+
+            blockMap.delete(key);
 
             worldChanges.set(
-                blockKey(
-                    block.x,
-                    block.y,
-                    block.z
-                ),
+                key,
                 {
                     type:"air"
                 }
@@ -1541,7 +1536,14 @@ renderer.domElement.addEventListener(
             );
 
             scheduleSave();
+
+            return;
         }
+
+
+        /* -------------------------
+           PLACE
+           ------------------------- */
 
         if(e.button === 2){
 
@@ -1557,33 +1559,71 @@ renderer.domElement.addEventListener(
                 block.z +
                 Math.round(target.normal.z);
 
-            const newBox =
-                playerBoxAt(
-                    new THREE.Vector3(
-                        nx+.5,
-                        ny,
-                        nz+.5
-                    )
+            const newKey =
+                blockKey(
+                    nx,
+                    ny,
+                    nz
                 );
+
+
+            /*
+               Do not replace an existing block.
+            */
+
+            if(blockMap.has(newKey)){
+                return;
+            }
+
+
+            /*
+               Make the collision box for
+               the block we're trying to place.
+            */
 
             const blockBox =
                 new THREE.Box3(
                     new THREE.Vector3(
-                        nx,ny,nz
+                        nx,
+                        ny,
+                        nz
                     ),
                     new THREE.Vector3(
-                        nx+1,
-                        ny+1,
-                        nz+1
+                        nx + 1,
+                        ny + 1,
+                        nz + 1
                     )
                 );
 
-            if(newBox.intersectsBox(blockBox)){
+
+            /*
+               Check the player's ACTUAL
+               current position.
+            */
+
+            const actualPlayerBox =
+                playerBoxAt(
+                    player.position
+                );
+
+
+            /*
+               Don't place a block inside
+               the player.
+            */
+
+            if(
+                actualPlayerBox.intersectsBox(
+                    blockBox
+                )
+            ){
                 return;
             }
 
-            const newKey =
-                blockKey(nx,ny,nz);
+
+            /*
+               Place the selected block.
+            */
 
             blockMap.set(
                 newKey,
@@ -1596,12 +1636,23 @@ renderer.domElement.addEventListener(
                 }
             );
 
+
+            /*
+               Save the placement.
+            */
+
             worldChanges.set(
                 newKey,
                 {
                     type:selectedBlock
                 }
             );
+
+
+            /*
+               Rebuild only the affected
+               chunk area.
+            */
 
             rebuildNearbyChunks(
                 nx,
@@ -1612,6 +1663,7 @@ renderer.domElement.addEventListener(
         }
     }
 );
+
 
 renderer.domElement.addEventListener(
     "contextmenu",
@@ -1869,11 +1921,6 @@ function loadWorld(world){
         player.flying = false;
     }
 
-    /*
-       Generate the player's current chunk first
-       so collision/spawn works immediately.
-    */
-
     const cx =
         Math.floor(
             player.position.x /
@@ -1887,10 +1934,6 @@ function loadWorld(world){
         );
 
     generateChunk(cx,cz);
-
-    /*
-       Apply saved world changes.
-    */
 
     for(
         const [key,change]
@@ -1941,10 +1984,6 @@ function loadWorld(world){
     document.getElementById(
         "leaveButton"
     ).style.display = "block";
-
-    /*
-       Force initial chunk loading.
-    */
 
     lastChunkX = null;
     lastChunkZ = null;
@@ -2197,11 +2236,6 @@ document.getElementById(
 
         name:name,
 
-        /*
-           Seed is stored for future seeded
-           terrain support. Terrain remains
-           identical to 0.4 for now.
-        */
         seed:seed,
 
         changes:[],
@@ -2287,12 +2321,6 @@ function animate(){
     if(currentWorld){
 
         updatePlayer(dt);
-
-        /*
-           Chunk updates are still checked periodically,
-           but updateChunks() immediately returns unless
-           the player has actually entered another chunk.
-        */
 
         chunkUpdateTimer += dt;
 
