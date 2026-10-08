@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BlockWeb 0.7</title>
+<title>BlockWeb 0.8</title>
 
 <style>
 html,body{
@@ -211,7 +211,7 @@ input{
 
 <div id="menu">
     <h1>BlockWeb</h1>
-    <h2>0.7</h2>
+    <h2>0.8</h2>
     <button class="menuButton" id="playButton">Worlds</button>
 </div>
 
@@ -241,7 +241,7 @@ input{
 <div id="crosshair"></div>
 
 <div id="info">
-    <b>BlockWeb 0.7</b><br>
+    <b>BlockWeb 0.8</b><br>
     WASD — Move<br>
     Space — Jump / Fly Up<br>
     Shift — Fly Down<br>
@@ -397,7 +397,7 @@ const blockNames = {
 
 
 /* =========================================================
-   0.7 PIXEL TEXTURE SYSTEM
+   0.8 PIXEL TEXTURE SYSTEM
    ========================================================= */
 
 const TILE_SIZE = 16;
@@ -986,13 +986,26 @@ const textureTiles = {
 
 function getTextureTile(type,face){
 
+    /*
+       0.8 uses the actual face direction instead of
+       relying on object identity. This keeps grass and
+       wood top/bottom/side textures assigned correctly
+       on every chunk and at chunk boundaries.
+    */
+
+    const isTop =
+        face.dir[1] === 1;
+
+    const isBottom =
+        face.dir[1] === -1;
+
     if(type === BLOCK_GRASS){
 
-        if(face === faceData.top){
+        if(isTop){
             return textureTiles.grassTop;
         }
 
-        if(face === faceData.bottom){
+        if(isBottom){
             return textureTiles.dirt;
         }
 
@@ -1001,10 +1014,7 @@ function getTextureTile(type,face){
 
     if(type === BLOCK_WOOD){
 
-        if(
-            face === faceData.top ||
-            face === faceData.bottom
-        ){
+        if(isTop || isBottom){
             return textureTiles.woodTop;
         }
 
@@ -1057,7 +1067,8 @@ function getTextureTile(type,face){
 
 function addFaceUVs(
     uvs,
-    tile
+    tile,
+    face
 ){
 
     const tx = tile[0];
@@ -1066,7 +1077,11 @@ function addFaceUVs(
     const atlasWidth = 4;
     const atlasHeight = 3;
 
-    const padding = 0.001;
+    /*
+       Slight inset prevents neighboring atlas tiles
+       from bleeding into the face.
+    */
+    const padding = 0.0015;
 
     const u0 =
         tx / atlasWidth + padding;
@@ -1085,15 +1100,83 @@ function addFaceUVs(
         padding;
 
     /*
-       Same corner ordering as the
-       original face geometry.
+       The face geometry has a different corner order
+       on different directions. Keep the texture upright
+       so the green grass strip stays at the top of every
+       vertical grass face.
     */
 
+    if(face.dir[1] === 1){
+
+        // Top
+        uvs.push(
+            u0,v0,
+            u0,v1,
+            u1,v1,
+            u1,v0
+        );
+
+        return;
+    }
+
+    if(face.dir[1] === -1){
+
+        // Bottom
+        uvs.push(
+            u0,v1,
+            u0,v0,
+            u1,v0,
+            u1,v1
+        );
+
+        return;
+    }
+
+    if(face.dir[0] === 1){
+
+        // Right
+        uvs.push(
+            u0,v0,
+            u0,v1,
+            u1,v1,
+            u1,v0
+        );
+
+        return;
+    }
+
+    if(face.dir[0] === -1){
+
+        // Left
+        uvs.push(
+            u1,v0,
+            u1,v1,
+            u0,v1,
+            u0,v0
+        );
+
+        return;
+    }
+
+    if(face.dir[2] === 1){
+
+        // Front
+        uvs.push(
+            u1,v0,
+            u0,v0,
+            u0,v1,
+            u1,v1
+        );
+
+        return;
+    }
+
+    // Back
     uvs.push(
         u0,v0,
-        u0,v1,
+        u1,v0,
         u1,v1,
-        u1,v0
+        u0,v1
     );
 }
 
@@ -1729,7 +1812,8 @@ function rebuildChunkMesh(chunk){
 
                     addFaceUVs(
                         uvs,
-                        tile
+                        tile,
+                        face
                     );
 
 
